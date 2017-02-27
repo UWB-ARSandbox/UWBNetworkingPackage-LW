@@ -1,6 +1,7 @@
 ﻿using System;
 using Photon;
 using UnityEngine;
+using UnityEditor;
 
 namespace UWBNetworkingPackage
 {
@@ -9,15 +10,16 @@ namespace UWBNetworkingPackage
     /// </summary>
     // Note: For future improvement, this class should: a) Detect the device and add the launcher automatically; 
     // or b) Only allow user to select one device
+    [System.Serializable]
     public class NetworkManager : PunBehaviour
     {
         #region Public Properties
 
-        //public bool MasterClient = false;
-        //public bool HoloLens = false;
-        //public bool Kinect = true;
-        public bool Vive = true;
-        //public bool Vive = false;
+        public bool MasterClient = false;
+        public bool HoloLens = false;
+        public bool Kinect = false;
+        public bool Android = false;
+        public bool Vive = false;
 
         // Needed for Room Mesh sending
         [Tooltip("A port number for devices to communicate through. The port number should be the same for each set of projects that need to connect to each other and share the same Room Mesh.")]
@@ -34,8 +36,13 @@ namespace UWBNetworkingPackage
         /// </summary>
         void Awake()
         {
-            //FORCE THIS VERSION TO BE THE VIVE VERSION
-            gameObject.AddComponent<ViveLauncher>();
+            //FORCE THIS VERSION TO BE THE ANDROID VERSION
+            gameObject.AddComponent<MasterClientLauncher>();
+
+
+            //Two Lines are required if the hololens project
+            //AssetDatabase.ImportPackage("HoloToolKit", false);
+            //gameObject.AddComponent<HoloLensLauncher>();
 
             //OLD SECTION OF CODE---------------------------------------------------------
             //----------------------------------------------------------------------------
@@ -58,11 +65,15 @@ namespace UWBNetworkingPackage
             //{
             //    gameObject.AddComponent<ViveLauncher>();
             //}
+            //else if (Android)
+            //{
+            //    gameObject.AddComponent<AndroidLauncher>();
+            //}
             //else
             //{
             //    throw new MissingFieldException("You need to select the kind of device you are running on");
             //}
-            // END OF OLD SECTION OF CODE-------------------------------------------------
+            //END OF OLD SECTION OF CODE-------------------------------------------------
         }
 
         /// <summary>

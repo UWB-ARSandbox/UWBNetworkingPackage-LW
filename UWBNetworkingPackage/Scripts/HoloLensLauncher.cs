@@ -1,10 +1,10 @@
 ﻿using System;
 using UnityEngine;
 using System.Collections;
-//using HoloToolkit.Unity;
 using Photon;
 
 #if !UNITY_EDITOR && UNITY_WSA_10_0
+using HoloToolkit.Unity;
 using Windows.Networking.Sockets;
 using Windows.Foundation;
 using Windows.Networking;
@@ -18,13 +18,15 @@ namespace UWBNetworkingPackage
     /// </summary>
     public class HoloLensLauncher : Launcher
     {
-        //public static SpatialMappingManager SpatialMappingManager;  // Needed for Room Scanning / Room Mesh
 
         // Only included if HoloLens
 #if !UNITY_EDITOR && UNITY_WSA_10_0
+        public static SpatialMappingManager SpatialMappingManager;  // Needed for Room Scanning / Room Mesh
         private StreamSocket holoClient;    // Async network client (asynchronous I/O needed for HoloLens)
         private IAsyncAction connection;    // Used for creating an asynchronous connection to the Master Client
 #endif
+
+#if !UNITY_EDITOR && UNITY_WSA_10_0
         
         /// <summary>
         /// Sets Photon Network settings and retrieves reference to the Spatial Mapping Manager on awake
@@ -32,7 +34,7 @@ namespace UWBNetworkingPackage
         public override void Awake()
         {
             base.Awake();
-//            SpatialMappingManager = gameObject.AddComponent<SpatialMappingManager>();
+            SpatialMappingManager = gameObject.AddComponent<SpatialMappingManager>();
         }
 
         /// <summary>
@@ -53,10 +55,10 @@ namespace UWBNetworkingPackage
         public override void OnJoinedRoom()
         {
             Debug.Log("OnJoinedRoom called...");
-            //if (!SpatialMappingManager.IsObserverRunning())
-            //{
-            //    SpatialMappingManager.StartObserver();
-            //}
+            if (!SpatialMappingManager.IsObserverRunning())
+            {
+                SpatialMappingManager.StartObserver();
+            }
         }
 
         /// <summary>
@@ -75,15 +77,15 @@ namespace UWBNetworkingPackage
         /// Master Client by establishing a new network connection (set up via RPC)
         /// </summary>
         //public void SendMesh()
-        //{
-        //    Database.UpdateMesh(gameObject.AddComponent<MeshDisplay>().LoadMesh());
-        //    photonView.RPC("ReceiveMesh", PhotonTargets.MasterClient, PhotonNetwork.player.ID);
-        //}
+        {
+            Database.UpdateMesh(gameObject.AddComponent<MeshDisplay>().LoadMesh());
+            photonView.RPC("ReceiveMesh", PhotonTargets.MasterClient, PhotonNetwork.player.ID);
+        }
 
         #region RPC Method
 
         // Only included if HoloLens
-#if !UNITY_EDITOR && UNITY_WSA_10_0
+
 
         /// <summary>
         /// Asynchronously sends the Room Mesh to the specified network configuration
@@ -100,9 +102,10 @@ namespace UWBNetworkingPackage
             var aach = new AsyncActionCompletedHandler(NetworkConnectedHandler);
             connection.Completed = aach;
         }  
+        #endregion
 #endif
 
-        #endregion
+
 
         #region Private Method
 

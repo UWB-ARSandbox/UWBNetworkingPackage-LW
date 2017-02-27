@@ -63,5 +63,30 @@ namespace UWBNetworkingPackage
             _meshes = newMesh;
             LastUpdate = DateTime.Now;
         }
+
+        /// <summary>
+        /// Delete the currently held Room Mesh
+        /// This method will also update the LastUpdate time
+        /// </summary>
+        public static void DeleteMesh()
+        {
+            Debug.Log("Deleting Mesh");
+            _meshes = null;
+            LastUpdate = DateTime.Now;
+        }
+
+        /// <summary>
+        /// Update the currently saved mesh to add the new mesh
+        /// This method will also update the LastUpdate time
+        /// </summary>
+        /// <param name="newMesh">Serialized Room Mesh stored in a byte array</param>
+        public static void AddToMesh(byte[] newMesh)
+        {
+            int length = newMesh.Length + _meshes.Length;
+            byte[] totalMesh = new byte[length];            
+            Buffer.BlockCopy(_meshes, 0, totalMesh, 0, _meshes.Length);          
+            Buffer.BlockCopy(newMesh, 0, totalMesh, _meshes.Length, newMesh.Length);
+            LastUpdate = DateTime.Now;
+        }
     }
 }
