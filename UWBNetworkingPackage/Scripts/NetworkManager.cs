@@ -37,7 +37,7 @@ namespace UWBNetworkingPackage
         void Awake()
         {
             //FORCE THIS VERSION TO BE THE ANDROID VERSION
-            gameObject.AddComponent<MasterClientLauncher>();
+            //gameObject.AddComponent<MasterClientLauncher>();
 
 
             //Two Lines are required if the hololens project
@@ -49,30 +49,30 @@ namespace UWBNetworkingPackage
             //THIS SECTION OF CODE WAS CAUSING ISSUES OF DEFAULTING BACK TO MASTER CLIENT
             //ON EVERY BUILD THAT WAS NOT MASTER CLIENT OR HOLOLENS...
             //----------------------------------------------------------------------------
-            //if (HoloLens)
-            //{
-            //    gameObject.AddComponent<HoloLensLauncher>();
-            //}
-            //else if (MasterClient)
-            //{
-            //    gameObject.AddComponent<MasterClientLauncher>();
-            //}
-            //else if (Kinect)
-            //{
-            //    gameObject.AddComponent<KinectLauncher>();
-            //}
-            //else if (Vive)
-            //{
-            //    gameObject.AddComponent<ViveLauncher>();
-            //}
-            //else if (Android)
-            //{
-            //    gameObject.AddComponent<AndroidLauncher>();
-            //}
-            //else
-            //{
-            //    throw new MissingFieldException("You need to select the kind of device you are running on");
-            //}
+            if (HoloLens)
+            {
+                gameObject.AddComponent<HoloLensLauncher>();
+            }
+            else if (MasterClient)
+            {
+                gameObject.AddComponent<MasterClientLauncher>();
+            }
+            else if (Kinect)
+            {
+                gameObject.AddComponent<KinectLauncher>();
+            }
+            else if (Vive)
+            {
+                gameObject.AddComponent<ViveLauncher>();
+            }
+            else if (Android)
+            {
+                gameObject.AddComponent<AndroidLauncher>();
+            }
+            else
+            {
+                throw new MissingFieldException("You need to select the kind of device you are running on");
+            }
             //END OF OLD SECTION OF CODE-------------------------------------------------
         }
 
