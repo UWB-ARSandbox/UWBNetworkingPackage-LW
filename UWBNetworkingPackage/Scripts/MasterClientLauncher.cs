@@ -1,12 +1,12 @@
-﻿
-
-using System;
+﻿using System;
 using UnityEngine;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 //using HoloToolkit.Unity;
 
 namespace UWBNetworkingPackage
@@ -84,6 +84,25 @@ namespace UWBNetworkingPackage
             {
                 this.DeleteMesh();
             }
+
+            ////AssettBundle sample send for testing purposes
+            if (Input.GetKeyDown("b"))
+            {
+                string path = Application.dataPath + "/StreamingAssets/AssetBundlesPC";
+                foreach (string file in System.IO.Directory.GetFiles(path))
+                {
+                    if (!file.Contains("manifest") && !file.Contains("meta"))
+                    {
+                        Debug.Log(file);
+                        //Note: this will break if the file path in which asset bundles is stored
+                        //is change.  If time, will come back later to fix the string parsing within
+                        //the file.
+                        byte[] bytes = File.ReadAllBytes(file);
+                        Debug.Log(bytes.Length);
+
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -97,6 +116,7 @@ namespace UWBNetworkingPackage
         /// <summary>
         /// After creating a room, set up a multi-threading tcp listener to listen on the specified port
         /// Once someone connects to the port, send the currently saved (in Database) Room Mesh
+        /// It creates a second tcp listener to send asset bundles across Port+1
         /// </summary>
         public override void OnCreatedRoom()
         {
@@ -119,8 +139,72 @@ namespace UWBNetworkingPackage
                         }
                         client.Close();
                     }).Start();
+
                 }
             }).Start();
+        }
+
+
+
+        /// <summary>
+        /// This returns local IP address
+        /// </summary>
+        /// <returns>Local IP address of the machine running as the Master Client</returns>
+        private IPAddress GetLocalIpAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (IPAddress ip in host.AddressList)
+            {
+                if (ip.AddressFamily.ToString() == "InterNetwork")
+                {
+                    return ip;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Performs the actual sending of bundles.  The path is determined
+        /// by the calling function which is dependent upon platform
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="path"></param>
+        /// <param name="port"></param>
+        private void SendBundles(int id, string path, int port)
+        {
+
+            TcpListener bundleListener = new TcpListener(IPAddress.Any, port);
+            bundleListener.Start();
+            new Thread(() =>
+            {
+                var client = bundleListener.AcceptTcpClient();
+                using (var stream = client.GetStream())
+                {
+                    foreach (string file in System.IO.Directory.GetFiles(path))
+                    {
+                        if (!file.Contains("manifest") && !file.Contains("meta"))
+                        {
+                            byte[] data = File.ReadAllBytes(path);
+                            using (MemoryStream ms = new MemoryStream())
+                            {
+                                int numBytesRead;
+                                while ((numBytesRead = stream.Read(data, 0, data.Length)) > 0)
+                                {
+                                    ms.Write(data, 0, numBytesRead);
+                                }
+                                Debug.Log("finish receiving mesh: size = " + ms.Length);
+
+                            }
+                            photonView.RPC("ReceiveBundles", PhotonPlayer.Find(id), GetLocalIpAddress() + ":" + port);
+                        }
+                    }
+
+                }
+                client.Close();
+                bundleListener.Stop();
+
+            }).Start();
+
         }
 
         #region RPC Method
@@ -137,6 +221,40 @@ namespace UWBNetworkingPackage
             {
                 photonView.RPC("ReceiveMesh", PhotonPlayer.Find(id), GetLocalIpAddress() + ":" + Port);
             }
+        }
+
+
+        /// <summary>
+        /// Send bundles for PC
+        /// </summary>
+        /// <param name="id"></param>
+        [PunRPC]
+        public void SendPCBundles(int id)
+        {
+            string path = Application.dataPath + "/StreamingAssets/AssetBundlesPC";
+            SendBundles(id, path, Port + 1);
+        }        
+
+        /// <summary>
+        /// Send bundles for Android
+        /// </summary>
+        /// <param name="id"></param>
+        [PunRPC]
+        public void SendAndroidBundles(int id)
+        {
+            string path = Application.dataPath + "/StreamingAssets/AssetBundlesAndroid";
+            SendBundles(id, path, Port + 2);
+        }
+
+        /// <summary>
+        /// Send bundles for hololens
+        /// </summary>
+        /// <param name="id"></param>
+        [PunRPC]
+        public void SendHololensBundles(int id)
+        {
+            string path = Application.dataPath + "/StreamingAssets/AssetBundlesHololens";
+            SendBundles(id, path, Port + 3);
         }
 
         /// <summary>

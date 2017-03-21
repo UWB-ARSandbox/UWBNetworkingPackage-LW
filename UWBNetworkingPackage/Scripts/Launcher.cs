@@ -3,9 +3,13 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-//using HoloToolkit.Unity;
+
 using UnityEngine.SceneManagement;
 using System.Net;
+
+#if !UNITY_EDITOR && UNITY_WSA_10_0
+using HoloToolkit.Unity;
+#endif
 
 namespace UWBNetworkingPackage
 {
@@ -15,13 +19,13 @@ namespace UWBNetworkingPackage
     /// </summary>
     public abstract class Launcher : Photon.PunBehaviour
     {
-        #region Private Properties
+#region Private Properties
 
         private static string _version = "1";   // Should be set to the current version of your application 
 
-        #endregion
+#endregion
 
-        #region Public Properties
+#region Public Properties
 
         // Needed for Room Mesh sending
         [Tooltip("A port number for devices to communicate through. The port number should be the same for each set of projects that need to connect to each other and share the same Room Mesh.")]
@@ -31,7 +35,7 @@ namespace UWBNetworkingPackage
         [Tooltip("The name of the room that this project will attempt to connect to. This room must be created by a \"Master Client\".")]    
         public string RoomName;
 
-        #endregion
+#endregion
 
         /// <summary>
         /// Sets the Photon Network settings on awake
@@ -189,25 +193,6 @@ namespace UWBNetworkingPackage
         {
 
         }
-
-
-
-        /// <summary>
-        /// This returns local IP address
-        /// </summary>
-        /// <returns>Local IP address of the machine running as the Master Client</returns>
-        public IPAddress GetLocalIpAddress()
-        {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (IPAddress ip in host.AddressList)
-            {
-                if (ip.AddressFamily.ToString() == "InterNetwork")
-                {
-                    return ip;
-                }
-            }
-            return null;
-        }
     }
 
     //NEEDED FOR HOLOLENS BUT NOTHING ELSE-------------------------------------------------------------------------------------
@@ -267,7 +252,7 @@ namespace UWBNetworkingPackage
             return SimpleMeshSerializer.Serialize(meshes);
         }
     }
-    END OF NEEDED FOR HOLOLENS BUT NOTHING ELSE-------------------------------------------------------------------------------
+//   END OF NEEDED FOR HOLOLENS BUT NOTHING ELSE-------------------------------------------------------------------------------
     /// <summary>
 #endif
 }
