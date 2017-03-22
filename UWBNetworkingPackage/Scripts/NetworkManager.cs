@@ -17,7 +17,7 @@ namespace UWBNetworkingPackage
     {
 #region Public Properties
 
-        private bool MasterClient = true;
+        public bool MasterClient = true;
         
         //public bool HoloLens = false;
         //public bool Kinect = false;
