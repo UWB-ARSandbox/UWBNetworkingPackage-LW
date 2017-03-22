@@ -16,6 +16,8 @@ namespace UWBNetworkingPackage
     public class ReceivingClientLauncher : Launcher
     {
 
+        public Dictionary<string, AssetBundle> bundles = new Dictionary<string, AssetBundle>();
+
         #region Private Properties
 
         private DateTime _lastUpdate = DateTime.MinValue;   // Used for keeping the Room Mesh up to date
@@ -101,6 +103,8 @@ namespace UWBNetworkingPackage
             photonView.RPC("SendMesh", PhotonTargets.MasterClient, PhotonNetwork.player.ID);
 #if UNITY_ANDROID
             photonView.RPC("SendAndroidBundles", PhotonTargets.MasterClient, PhotonNetwork.player.ID);
+#elif !UNITY_EDITOR && UNITY_WSA_10_0
+            photonView.RPC("SendHololensBundles", PhotonTargets.MasterClient. PhotonNetwork.player.ID);
 #else
             photonView.RPC("SendPCBundles", PhotonTargets.MasterClient, PhotonNetwork.player.ID);
 #endif
@@ -184,19 +188,17 @@ namespace UWBNetworkingPackage
         /// </summary>
         /// <param name="networkConfig"></param>
         [PunRPC]
-        public void ReceiveBundles(string networkConfig)
+        public void ReceiveBundles(string networkConfig, string bundleName)
         {
             var networkConfigArray = networkConfig.Split(':');
-
+            Debug.Log("Start receiving bundle.");
             TcpClient client = new TcpClient();
-            Debug.Log(Int32.Parse(networkConfigArray[1]));
             client.Connect(IPAddress.Parse(networkConfigArray[0]), Int32.Parse(networkConfigArray[1]));
-
+            Debug.Log(Int32.Parse(networkConfigArray[1]));
             using (var stream = client.GetStream())
             {
                 byte[] data = new byte[1024];
 
-                Debug.Log("Start receiving bundle.");
                 using (MemoryStream ms = new MemoryStream())
                 {
                     int numBytesRead;
@@ -208,7 +210,7 @@ namespace UWBNetworkingPackage
                     client.Close();
 
                     AssetBundle newBundle = AssetBundle.LoadFromMemory(ms.ToArray());
-                    newBundle.LoadAllAssets();
+                    bundles.Add(bundleName, newBundle);
                     Debug.Log("You loaded the bundle successfully.");
 
                 }

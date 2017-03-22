@@ -48,7 +48,7 @@ namespace UWBNetworkingPackage
             Debug.Log("OnConnectedToMaster called... Room Name: " + RoomName);
 
             PhotonNetwork.JoinRoom(RoomName);
-            photonView.RPC("SendHoloLensBundles", PhotonTargets.MasterClient, PhotonNetwork.player.ID);
+            //photonView.RPC("SendHoloLensBundles", PhotonTargets.MasterClient, PhotonNetwork.player.ID);
         }
 
         /// <summary>
@@ -85,45 +85,55 @@ namespace UWBNetworkingPackage
             photonView.RPC("ReceiveMesh", PhotonTargets.MasterClient, PhotonNetwork.player.ID);
         }
 
-                /// <summary>
-        /// Receive Bundles from the Master client.  Loads all assets from these bundles.
+        /// <summary>
+        /// Loads the mesh currently saved on the HoloLens, adds the mesh to the Database, and attempts to send the mesh to the 
+        /// Master Client by establishing a new network connection (set up via RPC)
         /// </summary>
-        /// <param name="networkConfig"></param>
-        [PunRPC]
-        public void ReceiveBundles(string networkConfig)
+        public void SendAddMesh()
         {
-            var networkConfigArray = networkConfig.Split(':');
+            Database.UpdateMesh(gameObject.AddComponent<MeshDisplay>().LoadMesh());
+            photonView.RPC("ReceiveAddMesh", PhotonTargets.MasterClient, PhotonNetwork.player.ID);
+        }
 
-            TcpClient client = new TcpClient();
-            Debug.Log(Int32.Parse(networkConfigArray[1]));
-            client.Connect(IPAddress.Parse(networkConfigArray[0]), Int32.Parse(networkConfigArray[1]));
+                /// <summary>
+        ///// Receive Bundles from the Master client.  Loads all assets from these bundles.
+        ///// </summary>
+        ///// <param name="networkConfig"></param>
+        //[PunRPC]
+        //public void ReceiveBundles(string networkConfig)
+        //{
+        //    var networkConfigArray = networkConfig.Split(':');
 
-            using (var stream = client.GetStream())
-            {
-                byte[] data = new byte[1024];
+        //    TcpClient client = new TcpClient();
+        //    Debug.Log(Int32.Parse(networkConfigArray[1]));
+        //    client.Connect(IPAddress.Parse(networkConfigArray[0]), Int32.Parse(networkConfigArray[1]));
 
-                Debug.Log("Start receiving bundle.");
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    int numBytesRead;
-                    while ((numBytesRead = stream.Read(data, 0, data.Length)) > 0)
-                    {
-                        ms.Write(data, 0, numBytesRead);
-                    }
-                    Debug.Log("Finish receiving bundle: size = " + ms.Length);
-                    client.Close();
+        //    using (var stream = client.GetStream())
+        //    {
+        //        byte[] data = new byte[1024];
 
-                    AssetBundle newBundle = AssetBundle.LoadFromMemory(ms.ToArray());
-                    newBundle.LoadAllAssets();
-                    Debug.Log("You loaded the bundle successfully.");
+        //        Debug.Log("Start receiving bundle.");
+        //        using (MemoryStream ms = new MemoryStream())
+        //        {
+        //            int numBytesRead;
+        //            while ((numBytesRead = stream.Read(data, 0, data.Length)) > 0)
+        //            {
+        //                ms.Write(data, 0, numBytesRead);
+        //            }
+        //            Debug.Log("Finish receiving bundle: size = " + ms.Length);
+        //            client.Close();
 
-                }
-            }
+        //            AssetBundle newBundle = AssetBundle.LoadFromMemory(ms.ToArray());
+        //            newBundle.LoadAllAssets();
+        //            Debug.Log("You loaded the bundle successfully.");
 
-            client.Close();
+        //        }
+        //    }
+
+        //    client.Close();
             
 
-        }
+        //}
 
         #region RPC Method
 
