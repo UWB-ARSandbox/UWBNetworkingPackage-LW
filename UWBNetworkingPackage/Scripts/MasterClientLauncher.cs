@@ -6,7 +6,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
+#if !UNITY_WSA_10_0
+    using System.Runtime.Serialization.Formatters.Binary;
+#endif
 //using HoloToolkit.Unity;
 
 namespace UWBNetworkingPackage
@@ -18,11 +20,11 @@ namespace UWBNetworkingPackage
     {
 
 #if UNITY_STANDALONE
-        #region Private Properties
+#region Private Properties
 
         private DateTime _lastUpdate = DateTime.MinValue;   // Used for keeping the Room Mesh up to date
 
-        #endregion
+#endregion
 
         /// <summary>
         /// Attempts to connect to the specified Room Name on start, and adds MeshDisplay component
@@ -76,6 +78,14 @@ namespace UWBNetworkingPackage
                 var memoryStream = new MemoryStream(File.ReadAllBytes("RoomMesh"));
                 this.DeleteLocalMesh();
                 Database.UpdateMesh(memoryStream.ToArray());
+                photonView.RPC("ReceiveMesh", PhotonTargets.Others, GetLocalIpAddress() + ":" + Port);
+            }
+
+            if (Input.GetKeyDown("c"))
+            {
+                //                Database.UpdateMesh(MeshSaver.Load("RoomMesh"));
+                var memoryStream = new MemoryStream(File.ReadAllBytes("imaginecup"));
+                Database.AddToMesh(memoryStream.ToArray());
                 photonView.RPC("ReceiveMesh", PhotonTargets.Others, GetLocalIpAddress() + ":" + Port);
             }
 
@@ -172,38 +182,37 @@ namespace UWBNetworkingPackage
         /// <param name="port"></param>
         private void SendBundles(int id, string path, int port)
         {
-
             TcpListener bundleListener = new TcpListener(IPAddress.Any, port);
+            Debug.Log(port);
             bundleListener.Start();
-            new Thread(() =>
+            foreach (string file in System.IO.Directory.GetFiles(path))
             {
-                var client = bundleListener.AcceptTcpClient();
-                using (var stream = client.GetStream())
+                if (!file.Contains("manifest") && !file.Contains("meta"))
                 {
-                    foreach (string file in System.IO.Directory.GetFiles(path))
-                    {
-                        if (!file.Contains("manifest") && !file.Contains("meta"))
+                    new Thread(() =>
                         {
-                            byte[] data = File.ReadAllBytes(path);
-                            using (MemoryStream ms = new MemoryStream())
+                            var client = bundleListener.AcceptTcpClient();
+                            Debug.Log("here?");
+                            using (var stream = client.GetStream())
                             {
-                                int numBytesRead;
-                                while ((numBytesRead = stream.Read(data, 0, data.Length)) > 0)
-                                {
-                                    ms.Write(data, 0, numBytesRead);
-                                }
-                                Debug.Log("finish receiving mesh: size = " + ms.Length);
+                                byte[] data = File.ReadAllBytes(path);
 
+                                    int numBytesRead;
+                                    while ((numBytesRead = stream.Read(data, 0, data.Length)) > 0)
+                                    {
+                                        stream.Write(data, 0, numBytesRead);
+                                    }
+                                    Debug.Log("finish sending bundle" + stream.Length);
+                                
                             }
-                            photonView.RPC("ReceiveBundles", PhotonPlayer.Find(id), GetLocalIpAddress() + ":" + port);
-                        }
-                    }
+                            client.Close();
 
+                        }).Start();
+                        photonView.RPC("ReceiveBundles", PhotonPlayer.Find(id), GetLocalIpAddress() + ":" + port, file);
                 }
-                client.Close();
-                bundleListener.Stop();
 
-            }).Start();
+            }
+            bundleListener.Stop();
 
         }
 
@@ -232,7 +241,7 @@ namespace UWBNetworkingPackage
         public void SendPCBundles(int id)
         {
             string path = Application.dataPath + "/StreamingAssets/AssetBundlesPC";
-            SendBundles(id, path, Port + 1);
+            SendBundles(id, path, (Port + 5));
         }        
 
         /// <summary>
@@ -243,7 +252,7 @@ namespace UWBNetworkingPackage
         public void SendAndroidBundles(int id)
         {
             string path = Application.dataPath + "/StreamingAssets/AssetBundlesAndroid";
-            SendBundles(id, path, Port + 2);
+            SendBundles(id, path, (Port + 2));
         }
 
         /// <summary>
@@ -254,7 +263,7 @@ namespace UWBNetworkingPackage
         public void SendHololensBundles(int id)
         {
             string path = Application.dataPath + "/StreamingAssets/AssetBundlesHololens";
-            SendBundles(id, path, Port + 3);
+            SendBundles(id, path, (Port + 3));
         }
 
         /// <summary>
@@ -332,7 +341,7 @@ namespace UWBNetworkingPackage
         public override void ReceiveAddMesh(int id)
         {
             // Setup TCPListener to wait and receive mesh
-            TcpListener receiveTcpListener = new TcpListener(IPAddress.Any, Port + 1);
+            TcpListener receiveTcpListener = new TcpListener(IPAddress.Any, Port + 4);
             receiveTcpListener.Start();
             new Thread(() =>
             {
@@ -359,10 +368,10 @@ namespace UWBNetworkingPackage
                 photonView.RPC("ReceiveMesh", PhotonTargets.Others, GetLocalIpAddress() + ":" + Port);
             }).Start();
 
-            photonView.RPC("SendAddMesh", PhotonPlayer.Find(id), GetLocalIpAddress() + ":" + (Port + 1));
+            photonView.RPC("SendAddMesh", PhotonPlayer.Find(id), GetLocalIpAddress() + ":" + (Port + 4));
         }
 
-        #endregion
+#endregion
 
 #endif
     }
