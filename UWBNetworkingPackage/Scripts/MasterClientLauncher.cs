@@ -183,37 +183,25 @@ namespace UWBNetworkingPackage
         private void SendBundles(int id, string path, int port)
         {
             TcpListener bundleListener = new TcpListener(IPAddress.Any, port);
-            Debug.Log(port);
+
             bundleListener.Start();
-            foreach (string file in System.IO.Directory.GetFiles(path))
-            {
-                if (!file.Contains("manifest") && !file.Contains("meta"))
-                {
                     new Thread(() =>
                         {
                             var client = bundleListener.AcceptTcpClient();
-                            Debug.Log("here?");
+                            
                             using (var stream = client.GetStream())
                             {
+                                //needs to be changed back
                                 byte[] data = File.ReadAllBytes(path);
+                                stream.Write(data, 0, data.Length);
+                                client.Close();
+                                Debug.Log("finish sending bundle" + stream.Length);
 
-                                    int numBytesRead;
-                                    while ((numBytesRead = stream.Read(data, 0, data.Length)) > 0)
-                                    {
-                                        stream.Write(data, 0, numBytesRead);
-                                    }
-                                    Debug.Log("finish sending bundle" + stream.Length);
-                                
                             }
-                            client.Close();
-
+                            
+                            bundleListener.Stop();
                         }).Start();
-                        photonView.RPC("ReceiveBundles", PhotonPlayer.Find(id), GetLocalIpAddress() + ":" + port, file);
-                }
-
-            }
-            bundleListener.Stop();
-
+                    photonView.RPC("ReceiveBundles", PhotonPlayer.Find(id), GetLocalIpAddress() + ":" + port, path);
         }
 
         #region RPC Method
@@ -241,7 +229,13 @@ namespace UWBNetworkingPackage
         public void SendPCBundles(int id)
         {
             string path = Application.dataPath + "/StreamingAssets/AssetBundlesPC";
-            SendBundles(id, path, (Port + 5));
+            foreach (string file in System.IO.Directory.GetFiles(path))
+            {
+                if (file.Contains("networkBundle") && !file.Contains("manifest") && !file.Contains("meta"))
+                {
+                    SendBundles(id, file, (Port + 5));
+                }
+            }
         }        
 
         /// <summary>
@@ -252,7 +246,13 @@ namespace UWBNetworkingPackage
         public void SendAndroidBundles(int id)
         {
             string path = Application.dataPath + "/StreamingAssets/AssetBundlesAndroid";
-            SendBundles(id, path, (Port + 2));
+            foreach (string file in System.IO.Directory.GetFiles(path))
+            {
+                if (file.Contains("networkBundle") && !file.Contains("manifest") && !file.Contains("meta"))
+                {
+                    SendBundles(id, file, (Port + 2));
+                }
+            }
         }
 
         /// <summary>
@@ -263,7 +263,13 @@ namespace UWBNetworkingPackage
         public void SendHololensBundles(int id)
         {
             string path = Application.dataPath + "/StreamingAssets/AssetBundlesHololens";
-            SendBundles(id, path, (Port + 3));
+            foreach (string file in System.IO.Directory.GetFiles(path))
+            {
+                if (file.Contains("networkBundle") && !file.Contains("manifest") && !file.Contains("meta"))
+                {
+                    SendBundles(id, file, (Port + 3));
+                }
+            }
         }
 
         /// <summary>

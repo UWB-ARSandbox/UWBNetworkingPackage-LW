@@ -16,7 +16,8 @@ namespace UWBNetworkingPackage
     public class ReceivingClientLauncher : Launcher
     {
 
-        public Dictionary<string, AssetBundle> bundles = new Dictionary<string, AssetBundle>();
+        //public Dictionary<string, AssetBundle> bundles = new Dictionary<string, AssetBundle>();
+        public AssetBundle networkAssets;
 
         #region Private Properties
 
@@ -194,7 +195,6 @@ namespace UWBNetworkingPackage
             Debug.Log("Start receiving bundle.");
             TcpClient client = new TcpClient();
             client.Connect(IPAddress.Parse(networkConfigArray[0]), Int32.Parse(networkConfigArray[1]));
-            Debug.Log(Int32.Parse(networkConfigArray[1]));
             using (var stream = client.GetStream())
             {
                 byte[] data = new byte[1024];
@@ -209,8 +209,10 @@ namespace UWBNetworkingPackage
                     Debug.Log("Finish receiving bundle: size = " + ms.Length);
                     client.Close();
 
-                    AssetBundle newBundle = AssetBundle.LoadFromMemory(ms.ToArray());
-                    bundles.Add(bundleName, newBundle);
+                    this.networkAssets = AssetBundle.LoadFromMemory(ms.ToArray());
+
+                    //AssetBundle newBundle = AssetBundle.LoadFromMemory(ms.ToArray());
+                    //bundles.Add(bundleName, newBundle);
                     Debug.Log("You loaded the bundle successfully.");
 
                 }
