@@ -49,12 +49,12 @@ namespace UWBNetworkingPackage
             }
             else
             {
-                gameObject.AddComponent<MasterClientLauncher>();
+                gameObject.AddComponent<ReceivingClientLauncher>();
             }
 #endif
 
 #if UNITY_ANDROID
-            gameObject.AddComponent<MasterClientLauncher>();
+            gameObject.AddComponent<ReceivingClientLauncher>();
 #endif
 
 #if UNITY_WSA_10_0
@@ -99,7 +99,7 @@ namespace UWBNetworkingPackage
         /// This is here because HoloLensLauncher is applied at runtime
         /// In the HoloLensDemo, this method is called when the phrase "Send Mesh" is spoken and heard by the HoloLens
         /// </summary>
-#if UNITY_WSA_10_0     
+#if UNITY_WSA_10_0
         public void HoloSendMesh()
         { 
             gameObject.GetComponent<HoloLensLauncher>().SendMesh();
