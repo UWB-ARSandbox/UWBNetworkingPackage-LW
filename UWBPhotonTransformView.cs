@@ -40,6 +40,8 @@ public class UWBPhotonTransformView : MonoBehaviour, IPunObservable
     PhotonTransformViewRotationControl m_RotationControl;
     PhotonTransformViewScaleControl m_ScaleControl;
 
+    Color netColor;
+
     PhotonView m_PhotonView;
 
     bool m_ReceivedNetworkUpdate = false;
@@ -56,6 +58,8 @@ public class UWBPhotonTransformView : MonoBehaviour, IPunObservable
         this.m_PositionControl = new PhotonTransformViewPositionControl(this.m_PositionModel);
         this.m_RotationControl = new PhotonTransformViewRotationControl(this.m_RotationModel);
         this.m_ScaleControl = new PhotonTransformViewScaleControl(this.m_ScaleModel);
+
+        netColor = this.gameObject.GetComponent<Renderer>().material.color;
     }
 
     void OnEnable()
@@ -123,6 +127,7 @@ public class UWBPhotonTransformView : MonoBehaviour, IPunObservable
         this.m_PositionControl.OnPhotonSerializeView(transform.localPosition, stream, info);
         this.m_RotationControl.OnPhotonSerializeView(transform.localRotation, stream, info);
         this.m_ScaleControl.OnPhotonSerializeView(transform.localScale, stream, info);
+        //this.OnPhotonSerializeColor(stream, info);
 
         if (this.m_PhotonView.isMine == false && this.m_PositionModel.DrawErrorGizmo == true)
         {
@@ -145,16 +150,38 @@ public class UWBPhotonTransformView : MonoBehaviour, IPunObservable
         }
     }
 
-    //void OnDrawGizmos()
-    //{
-    //    if( Application.isPlaying == false || m_PhotonView == null || m_PhotonView.isMine == true || PhotonNetwork.connected == false )
-    //    {
-    //        return;
-    //    }
+    /* Non-working serialize color code
+    public void OnPhotonSerializeColor(PhotonStream stream, PhotonMessageInfo info)
+    {
+        if (stream.isWriting == true)
+        {
+            Color rendColor = this.GetComponent<Renderer>().material.color;
+            if (netColor == rendColor)
+            {
+                stream.SendNext(false);
+                return;
+            }
+            stream.SendNext(rendColor.r);
+            stream.SendNext(rendColor.g);
+            stream.SendNext(rendColor.b);
+            netColor = rendColor;
+        }
+        else
+        {
+            if((bool)stream.ReceiveNext() == false)
+            {
+                // No color sent
+                return; 
+            }
 
-    //    DoDrawNetworkPositionGizmo();
-    //    DoDrawExtrapolatedPositionGizmo();
-    //}
+            float r = (float)stream.ReceiveNext();
+            float g = (float)stream.ReceiveNext();
+            float b = (float)stream.ReceiveNext();
+            netColor = new Color(r, g, b);
+            this.GetComponent<Renderer>().material.color = netColor;
+        }
+    }
+    */
 
     void DoDrawEstimatedPositionError()
     {
@@ -171,34 +198,6 @@ public class UWBPhotonTransformView : MonoBehaviour, IPunObservable
         Debug.DrawLine(targetPosition, targetPosition + Vector3.up, Color.red, 2f);
     }
 
-    //void DoDrawNetworkPositionGizmo()
-    //{
-    //    if( m_PositionModel.DrawNetworkGizmo == false || m_PositionControl == null )
-    //    {
-    //        return;
-    //    }
-
-    //    ExitGames.Client.GUI.GizmoTypeDrawer.Draw( m_PositionControl.GetNetworkPosition(),
-    //                                               m_PositionModel.NetworkGizmoType,
-    //                                               m_PositionModel.NetworkGizmoColor,
-    //                                               m_PositionModel.NetworkGizmoSize );
-    //}
-
-    //void DoDrawExtrapolatedPositionGizmo()
-    //{
-    //    if( m_PositionModel.DrawExtrapolatedGizmo == false ||
-    //        m_PositionModel.ExtrapolateOption == PhotonTransformViewPositionModel.ExtrapolateOptions.Disabled ||
-    //        m_PositionControl == null )
-    //    {
-    //        return;
-    //    }
-
-    //    ExitGames.Client.GUI.GizmoTypeDrawer.Draw( m_PositionControl.GetNetworkPosition() + m_PositionControl.GetExtrapolatedPositionOffset(),
-    //                                               m_PositionModel.ExtrapolatedGizmoType,
-    //                                               m_PositionModel.ExtrapolatedGizmoColor,
-    //                                               m_PositionModel.ExtrapolatedGizmoSize );
-    //}
-
     public void enableSyncPos()
     {
         this.m_PositionModel.SynchronizeEnabled = true;
@@ -210,5 +209,17 @@ public class UWBPhotonTransformView : MonoBehaviour, IPunObservable
     public void enableSyncScale()
     {
         this.m_ScaleModel.SynchronizeEnabled = true;
+    }
+
+    [PunRPC]
+    public void ChangeColor(float r, float g, float b)
+    {
+        if (this.gameObject.GetComponent<Renderer>() == null)
+        {
+            Debug.LogWarning("RPC [ChangeColor] called on object with no Renderer");
+            return;
+        }
+
+        this.gameObject.GetComponent<Renderer>().material.color = new Color(r, g, b);
     }
 }
